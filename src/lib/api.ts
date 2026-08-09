@@ -60,6 +60,71 @@ const DEFAULT_USERS: Record<string, User & { password?: string }> = {
   },
 };
 
+// Default Nearby Facilities matching Picture 2
+const DEFAULT_FACILITIES: NearbyFacility[] = [
+  {
+    id: 'fac_01',
+    name: 'Fort Fire Station & Dispatch Battalion #1',
+    type: 'fire_station',
+    distance: 600,
+    distanceKm: 0.6,
+    phone: '+91 22 2262 0112',
+    address: 'Shahid Bhagat Singh Rd, Fort, Mumbai',
+    coordinates: [72.8350, 18.9300],
+    isOpen24h: true,
+  },
+  {
+    id: 'fac_02',
+    name: 'KEM Hospital & Level-1 Trauma Center',
+    type: 'hospital',
+    distance: 850,
+    distanceKm: 0.8,
+    phone: '+91 22 2410 7000',
+    address: 'Acharya Donde Marg, Parel, Mumbai',
+    coordinates: [72.8420, 18.9980],
+    availableBeds: 18,
+    capacity: { availableBeds: 18, totalBeds: 50, traumaLevel: 'Level 1 Trauma Center' },
+    isOpen24h: true,
+  },
+  {
+    id: 'fac_03',
+    name: 'Mumbai Police Commissionerate Headquarters',
+    type: 'police',
+    distance: 1100,
+    distanceKm: 1.1,
+    phone: '+91 22 2262 0111',
+    address: 'Crawford Market Area, Fort, Mumbai',
+    coordinates: [72.8320, 18.9480],
+    isOpen24h: true,
+  },
+  {
+    id: 'fac_04',
+    name: 'Lilavati Hospital & Research Centre',
+    type: 'hospital',
+    distance: 1400,
+    distanceKm: 1.4,
+    phone: '+91 22 2675 1000',
+    address: 'A-791, Bandra Reclamation, Bandra West, Mumbai',
+    coordinates: [72.8300, 19.0520],
+    availableBeds: 12,
+    capacity: { availableBeds: 12, totalBeds: 40, traumaLevel: 'Level 2 Emergency Care' },
+    isOpen24h: true,
+  },
+  {
+    id: 'fac_05',
+    name: 'Tata Memorial Trauma & Cancer Care Centre',
+    type: 'hospital',
+    distance: 2200,
+    distanceKm: 2.2,
+    phone: '+91 22 2417 7000',
+    address: 'Dr. E Borges Road, Parel, Mumbai',
+    coordinates: [72.8410, 18.9920],
+    availableBeds: 25,
+    capacity: { availableBeds: 25, totalBeds: 60, traumaLevel: 'Specialty Emergency Unit' },
+    isOpen24h: true,
+  },
+];
+
 // Initial Cases for Client-side Fallback (starts clean: strictly populated by user input)
 const DEFAULT_CASES: EmergencyCase[] = [];
 
@@ -439,8 +504,15 @@ function handleClientFallback(endpoint: string, options: RequestInit = {}): any 
         criticalCases: criticalCases.length,
         totalUsers: Object.keys(users).length,
         casesByType,
-        casesBySeverity,
       },
+    };
+  }
+
+  // 9. Nearby Facilities
+  if (endpoint.startsWith('/facilities/nearby') && method === 'GET') {
+    return {
+      success: true,
+      data: DEFAULT_FACILITIES,
     };
   }
 
