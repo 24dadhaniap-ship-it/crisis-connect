@@ -134,9 +134,6 @@ export const ReportEmergencyPage: React.FC<Props> = ({ onCaseCreated }) => {
             <ShieldAlert className="w-8 h-8 text-red-500" />
             Report Emergency Incident
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Gemini AI will analyze your report, score severity, and notify nearest dispatchers instantly.
-          </p>
         </div>
 
         {errorMessage && (

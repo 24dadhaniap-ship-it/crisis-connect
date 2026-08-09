@@ -153,7 +153,6 @@ export const AdminDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
           <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
             <span className="text-xs font-bold text-slate-400 uppercase">Total Incidents Logged</span>
             <div className="text-3xl font-black text-white mt-1">{stats?.totalCases ?? cases.length}</div>
-            <p className="text-[11px] text-emerald-400 mt-1">✓ 100% Gemini AI Processed</p>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
