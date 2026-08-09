@@ -269,12 +269,26 @@ function handleClientFallback(endpoint: string, options: RequestInit = {}): any 
     const targetIndex = cases.findIndex((c) => c.caseId === caseId || c._id === caseId);
 
     if (targetIndex !== -1) {
+      const existing = cases[targetIndex];
+      const isResolved = body.status === 'resolved';
+      const resolvedAt = isResolved ? (existing.resolvedAt || new Date().toISOString()) : existing.resolvedAt;
+
+      let responseTimeMinutes = existing.responseTimeMinutes;
+      if (isResolved && !responseTimeMinutes) {
+        const createdMs = new Date(existing.createdAt).getTime();
+        const diffMs = Date.now() - createdMs;
+        const elapsed = Math.round((diffMs / 60000) * 10) / 10;
+        responseTimeMinutes = elapsed > 0.1 ? elapsed : 2.5;
+      }
+
       cases[targetIndex] = {
-        ...cases[targetIndex],
-        status: body.status || cases[targetIndex].status,
+        ...existing,
+        status: body.status || existing.status,
+        resolvedAt,
+        responseTimeMinutes,
         statusHistory: [
-          ...cases[targetIndex].statusHistory,
-          { status: body.status, changedAt: new Date().toISOString(), note: body.note || 'Status updated' },
+          ...existing.statusHistory,
+          { status: body.status, changedAt: new Date().toISOString(), note: body.note || `Status updated to ${body.status}` },
         ],
         updatedAt: new Date().toISOString(),
       };
@@ -282,6 +296,107 @@ function handleClientFallback(endpoint: string, options: RequestInit = {}): any 
       return { success: true, data: cases[targetIndex] };
     }
     return { success: false, message: 'Case not found' };
+  }
+
+  // 7.5 Trigger Live Demo Scenario
+  if (endpoint === '/admin/demo-trigger' && method === 'POST') {
+    const cases = getStoredCases();
+    const demoCaseId = `CC-${Math.floor(10000 + Math.random() * 90000)}`;
+    const newDemoCase: EmergencyCase = {
+      _id: `c_${Date.now()}`,
+      caseId: demoCaseId,
+      type: 'road_accident',
+      severity: 'critical',
+      status: 'reported',
+      description: 'DEMO LIVE ACCIDENT: High-speed crash near Marine Drive & Nariman Point. Vehicle smoke detected, 2 persons trapped.',
+      peopleAffected: 2,
+      location: {
+        type: 'Point',
+        coordinates: [72.8232, 18.9220],
+        address: 'Marine Drive & Nariman Point Junction',
+        city: 'Mumbai',
+      },
+      media: [],
+      aiAnalysis: {
+        severity: 'critical',
+        type: 'road_accident',
+        confidence: 0.98,
+        summary: 'Critical multi-impact crash with passenger entanglements. High risk of spinal injury.',
+        immediateActions: [
+          'Keep victim head immobile.',
+          'Secure battery disconnect to prevent fire.',
+          'Deploy heavy hydraulic cutters.',
+        ],
+        resourcesNeeded: ['heavy_rescue', 'ambulance', 'fire_engine'],
+        estimatedResponseTime: 3,
+        processedAt: new Date().toISOString(),
+        model: 'gemini-3.6-flash',
+      },
+      assignedResponders: [],
+      statusHistory: [
+        { status: 'reported', changedAt: new Date().toISOString(), note: 'Demo incident reported' },
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    saveStoredCases([newDemoCase, ...cases]);
+
+    // Automated 28-second Lifecycle Transition
+    setTimeout(() => {
+      const stored = getStoredCases();
+      const idx = stored.findIndex(c => c.caseId === demoCaseId);
+      if (idx !== -1) {
+        stored[idx].status = 'active';
+        stored[idx].statusHistory.push({ status: 'active', changedAt: new Date().toISOString(), note: 'AI classified as critical' });
+        saveStoredCases(stored);
+      }
+    }, 3000);
+
+    setTimeout(() => {
+      const stored = getStoredCases();
+      const idx = stored.findIndex(c => c.caseId === demoCaseId);
+      if (idx !== -1) {
+        stored[idx].status = 'assigned';
+        stored[idx].assignedResponderName = 'Marcus Vance';
+        stored[idx].statusHistory.push({ status: 'assigned', changedAt: new Date().toISOString(), note: 'Dispatched Paramedic Marcus Vance' });
+        saveStoredCases(stored);
+      }
+    }, 8000);
+
+    setTimeout(() => {
+      const stored = getStoredCases();
+      const idx = stored.findIndex(c => c.caseId === demoCaseId);
+      if (idx !== -1) {
+        stored[idx].status = 'responding';
+        stored[idx].statusHistory.push({ status: 'responding', changedAt: new Date().toISOString(), note: 'Units en route with sirens' });
+        saveStoredCases(stored);
+      }
+    }, 15000);
+
+    setTimeout(() => {
+      const stored = getStoredCases();
+      const idx = stored.findIndex(c => c.caseId === demoCaseId);
+      if (idx !== -1) {
+        stored[idx].status = 'arrived';
+        stored[idx].statusHistory.push({ status: 'arrived', changedAt: new Date().toISOString(), note: 'Units arrived on scene' });
+        saveStoredCases(stored);
+      }
+    }, 22000);
+
+    setTimeout(() => {
+      const stored = getStoredCases();
+      const idx = stored.findIndex(c => c.caseId === demoCaseId);
+      if (idx !== -1) {
+        stored[idx].status = 'resolved';
+        stored[idx].resolvedAt = new Date().toISOString();
+        stored[idx].responseTimeMinutes = 2.8;
+        stored[idx].statusHistory.push({ status: 'resolved', changedAt: new Date().toISOString(), note: 'Incident successfully resolved within 3 minute response window' });
+        saveStoredCases(stored);
+      }
+    }, 28000);
+
+    return { success: true, data: newDemoCase, message: 'Live demo emergency scenario initialized!' };
   }
 
   // 8. Admin Stats
