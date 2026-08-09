@@ -164,13 +164,13 @@ export const AdminDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
 
           <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
             <span className="text-xs font-bold text-slate-400 uppercase">Responders Online</span>
-            <div className="text-3xl font-black text-blue-400 mt-1">{responders.length || 4}</div>
+            <div className="text-3xl font-black text-blue-400 mt-1">{stats?.respondersOnline ?? responders.length}</div>
             <p className="text-[11px] text-blue-400 mt-1">🚑 Active Units</p>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
             <span className="text-xs font-bold text-slate-400 uppercase">Avg Response Time</span>
-            <div className="text-3xl font-black text-amber-400 mt-1">{stats?.avgResponseTimeMinutes ?? 5.4}m</div>
+            <div className="text-3xl font-black text-amber-400 mt-1">{stats?.avgResponseTimeMinutes ? `${stats.avgResponseTimeMinutes}m` : '0m'}</div>
             <p className="text-[11px] text-amber-400 mt-1">⏱️ Dispatch to Arrival</p>
           </div>
         </div>
