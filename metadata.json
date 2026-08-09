@@ -1,0 +1,6 @@
+{
+  "name": "CrisisConnect",
+  "description": "Real-Time Emergency Coordination Platform with AI Classification, Live Map, Responder Dispatch, and Incident Tracking",
+  "requestFramePermissions": ["geolocation", "camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
