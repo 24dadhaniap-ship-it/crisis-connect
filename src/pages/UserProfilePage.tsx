@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Phone, Mail, Shield, HeartPulse, AlertTriangle, Save, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 
 export const UserProfilePage: React.FC = () => {
-  const { user, updateProfile, isLoading } = useAuthStore();
+  const { user, fetchMe, updateProfile, isLoading, demoLogin } = useAuthStore();
 
-  const [name, setName] = useState(user?.name || '');
-  const [phone, setPhone] = useState(user?.phone || '');
+  const [name, setName] = useState(user?.name || 'John Doe');
+  const [phone, setPhone] = useState(user?.phone || '+91 98765 43210');
   const [bloodType, setBloodType] = useState(user?.emergencyProfile?.bloodType || 'O+');
   const [allergies, setAllergies] = useState(user?.emergencyProfile?.allergies?.join(', ') || 'Penicillin');
   const [medicalConditions, setMedicalConditions] = useState(
@@ -16,10 +16,32 @@ export const UserProfilePage: React.FC = () => {
     user?.emergencyProfile?.emergencyContacts?.[0]?.name || 'Jane Doe'
   );
   const [emergencyContactPhone, setEmergencyContactPhone] = useState(
-    user?.emergencyProfile?.emergencyContacts?.[0]?.phone || '+1 (555) 987-6543'
+    user?.emergencyProfile?.emergencyContacts?.[0]?.phone || '+91 98765 43211'
   );
 
   const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    if (!user) {
+      fetchMe();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.name || 'John Doe');
+      setPhone(user.phone || '+91 98765 43210');
+      if (user.emergencyProfile) {
+        setBloodType(user.emergencyProfile.bloodType || 'O+');
+        setAllergies(user.emergencyProfile.allergies?.join(', ') || 'Penicillin');
+        setMedicalConditions(user.emergencyProfile.medicalConditions?.join(', ') || 'Asthma');
+        if (user.emergencyProfile.emergencyContacts?.[0]) {
+          setEmergencyContactName(user.emergencyProfile.emergencyContacts[0].name || 'Jane Doe');
+          setEmergencyContactPhone(user.emergencyProfile.emergencyContacts[0].phone || '+91 98765 43211');
+        }
+      }
+    }
+  }, [user]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +50,8 @@ export const UserProfilePage: React.FC = () => {
       phone,
       emergencyProfile: {
         bloodType,
-        allergies: allergies.split(',').map((s) => s.trim()),
-        medicalConditions: medicalConditions.split(',').map((s) => s.trim()),
+        allergies: allergies.split(',').map((s) => s.trim()).filter(Boolean),
+        medicalConditions: medicalConditions.split(',').map((s) => s.trim()).filter(Boolean),
         emergencyContacts: [{ name: emergencyContactName, phone: emergencyContactPhone }],
       },
     });
