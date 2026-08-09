@@ -120,7 +120,7 @@ export const LandingPage: React.FC<Props> = ({ setActiveTab, onTrackCase }) => {
           />
 
           <LiveCounter
-            value={stats?.respondersOnline ?? 4}
+            value={stats?.respondersOnline ?? 0}
             label="Responders Online"
             sublabel="Paramedics & Units Active"
             icon={<Users className="w-6 h-6 text-emerald-400" />}
@@ -136,7 +136,7 @@ export const LandingPage: React.FC<Props> = ({ setActiveTab, onTrackCase }) => {
           />
 
           <LiveCounter
-            value={`${stats?.avgResponseTimeMinutes ?? 5.4}m`}
+            value={`${stats?.avgResponseTimeMinutes ?? 0}m`}
             label="Avg Response Time"
             sublabel="Time from report to arrival"
             icon={<Clock className="w-6 h-6 text-amber-400" />}

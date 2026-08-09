@@ -60,124 +60,8 @@ const DEFAULT_USERS: Record<string, User & { password?: string }> = {
   },
 };
 
-// Initial Mock Cases for Client-side Fallback
-const DEFAULT_CASES: EmergencyCase[] = [
-  {
-    _id: 'c1',
-    caseId: 'CC-10243',
-    type: 'road_accident',
-    severity: 'critical',
-    status: 'assigned',
-    description: 'Multi-vehicle collision involving bus and motorcycle near Marine Drive. Heavy traffic block.',
-    peopleAffected: 4,
-    location: {
-      type: 'Point',
-      coordinates: [72.8777, 19.0760],
-      address: 'Marine Drive Promenade, Mumbai',
-      city: 'Mumbai',
-    },
-    media: [],
-    aiAnalysis: {
-      severity: 'critical',
-      type: 'road_accident',
-      confidence: 0.96,
-      summary: 'Severe road collision requires immediate advanced trauma dispatch and spine stabilization.',
-      immediateActions: [
-        'Do not move head or neck of unconscious casualties.',
-        'Apply firm pressure to bleeding sites.',
-        'Keep spectators clear for incoming ambulances.',
-      ],
-      resourcesNeeded: ['ambulance', 'police_unit'],
-      estimatedResponseTime: 4,
-      processedAt: new Date().toISOString(),
-      model: 'gemini-3.6-flash',
-    },
-    assignedResponders: [DEFAULT_USERS['officer.marcus@demo.com']],
-    assignedResponderName: 'Marcus Vance',
-    statusHistory: [
-      { status: 'reported', changedAt: new Date(Date.now() - 900000).toISOString(), note: 'Reported via CrisisConnect' },
-      { status: 'active', changedAt: new Date(Date.now() - 800000).toISOString(), note: 'AI classified as critical' },
-      { status: 'assigned', changedAt: new Date(Date.now() - 500000).toISOString(), note: 'Dispatched Marcus Vance' },
-    ],
-    createdAt: new Date(Date.now() - 900000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'c2',
-    caseId: 'CC-10244',
-    type: 'fire',
-    severity: 'high',
-    status: 'responding',
-    description: 'Electrical transformer fire in commercial basement near BKC Crossing.',
-    peopleAffected: 2,
-    location: {
-      type: 'Point',
-      coordinates: [72.8680, 19.0650],
-      address: 'Bandra Kurla Complex, Mumbai',
-      city: 'Mumbai',
-    },
-    media: [],
-    aiAnalysis: {
-      severity: 'high',
-      type: 'fire',
-      confidence: 0.94,
-      summary: 'Commercial electrical fire. Evacuate building immediately to prevent smoke inhalation.',
-      immediateActions: [
-        'Stay low under smoke and crawl to safety.',
-        'Do not use elevators.',
-        'Shut off main electrical breaker if safe.',
-      ],
-      resourcesNeeded: ['fire_truck', 'ambulance'],
-      estimatedResponseTime: 5,
-      processedAt: new Date().toISOString(),
-      model: 'gemini-3.6-flash',
-    },
-    assignedResponders: [],
-    statusHistory: [
-      { status: 'reported', changedAt: new Date(Date.now() - 1200000).toISOString(), note: 'Reported via app' },
-      { status: 'responding', changedAt: new Date(Date.now() - 600000).toISOString(), note: 'Fire tenders en route' },
-    ],
-    createdAt: new Date(Date.now() - 1200000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    _id: 'c3',
-    caseId: 'CC-10245',
-    type: 'medical_emergency',
-    severity: 'medium',
-    status: 'reported',
-    description: 'Elderly citizen experiencing sudden chest pain and breathing difficulty.',
-    peopleAffected: 1,
-    location: {
-      type: 'Point',
-      coordinates: [72.8350, 18.9950],
-      address: 'Worli Sea Face, Mumbai',
-      city: 'Mumbai',
-    },
-    media: [],
-    aiAnalysis: {
-      severity: 'medium',
-      type: 'medical_emergency',
-      confidence: 0.91,
-      summary: 'Cardiac distress symptom report. Patient requires immediate ECG and oxygen support.',
-      immediateActions: [
-        'Keep patient seated upright and calm.',
-        'Loosen collar and tight clothing.',
-        'Do not offer water or food.',
-      ],
-      resourcesNeeded: ['ambulance'],
-      estimatedResponseTime: 6,
-      processedAt: new Date().toISOString(),
-      model: 'gemini-3.6-flash',
-    },
-    assignedResponders: [],
-    statusHistory: [
-      { status: 'reported', changedAt: new Date(Date.now() - 300000).toISOString(), note: 'Reported by family' },
-    ],
-    createdAt: new Date(Date.now() - 300000).toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+// Initial Cases for Client-side Fallback (starts clean: strictly populated by user input)
+const DEFAULT_CASES: EmergencyCase[] = [];
 
 // Helper to manage local storage state
 function getStoredUsers(): Record<string, User & { password?: string }> {
@@ -198,11 +82,16 @@ function saveStoredUsers(users: Record<string, User & { password?: string }>) {
 
 function getStoredCases(): EmergencyCase[] {
   try {
+    if (!localStorage.getItem('crisis_v4_clean')) {
+      localStorage.removeItem('crisis_local_cases');
+      localStorage.setItem('crisis_v4_clean', 'true');
+      return [];
+    }
     const raw = localStorage.getItem('crisis_local_cases');
-    if (!raw) return DEFAULT_CASES;
+    if (!raw) return [];
     return JSON.parse(raw);
   } catch {
-    return DEFAULT_CASES;
+    return [];
   }
 }
 
@@ -400,29 +289,42 @@ function handleClientFallback(endpoint: string, options: RequestInit = {}): any 
     const cases = getStoredCases();
     const activeCases = cases.filter((c) => c.status !== 'resolved' && c.status !== 'cancelled');
     const criticalCases = activeCases.filter((c) => c.severity === 'critical');
+    const resolvedToday = cases.filter((c) => c.status === 'resolved');
+
+    let totalResponseTime = 0;
+    let responseCount = 0;
+    cases.forEach((c) => {
+      if (c.responseTimeMinutes) {
+        totalResponseTime += c.responseTimeMinutes;
+        responseCount++;
+      }
+    });
+
+    const avgResponseTimeMinutes = responseCount > 0 ? Math.round((totalResponseTime / responseCount) * 10) / 10 : 0;
+
+    const casesByType: Record<string, number> = {};
+    const casesBySeverity: Record<string, number> = {};
+    cases.forEach((c) => {
+      casesByType[c.type] = (casesByType[c.type] || 0) + 1;
+      casesBySeverity[c.severity] = (casesBySeverity[c.severity] || 0) + 1;
+    });
+
+    const onlineResponders = Object.values(users).filter(
+      (u) => u.role === 'responder' && u.responderProfile?.isAvailable
+    ).length;
 
     return {
       success: true,
       data: {
         totalCases: cases.length,
         activeCases: activeCases.length,
-        respondersOnline: 12,
-        resolvedToday: 8,
-        avgResponseTimeMinutes: 4.8,
+        respondersOnline: onlineResponders,
+        resolvedToday: resolvedToday.length,
+        avgResponseTimeMinutes,
         criticalCases: criticalCases.length,
-        totalUsers: 145,
-        casesByType: {
-          road_accident: 14,
-          fire: 8,
-          medical_emergency: 22,
-          flood: 3,
-        },
-        casesBySeverity: {
-          critical: criticalCases.length,
-          high: activeCases.filter((c) => c.severity === 'high').length,
-          medium: activeCases.filter((c) => c.severity === 'medium').length,
-          low: activeCases.filter((c) => c.severity === 'low').length,
-        },
+        totalUsers: Object.keys(users).length,
+        casesByType,
+        casesBySeverity,
       },
     };
   }
