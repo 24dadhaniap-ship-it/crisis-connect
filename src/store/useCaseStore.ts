@@ -25,6 +25,7 @@ interface CaseState {
   updateCaseStatus: (caseId: string, status: CaseStatus, note?: string) => Promise<boolean>;
   acceptCase: (caseId: string) => Promise<boolean>;
   setFilters: (filters: Partial<CaseFilters>) => void;
+  resetAllCases: () => Promise<boolean>;
   setupSocketListeners: () => void;
 }
 
@@ -128,6 +129,15 @@ export const useCaseStore = create<CaseState>((set, get) => ({
   setFilters: (newFilters) => {
     set((state) => ({ filters: { ...state.filters, ...newFilters } }));
     get().fetchCases();
+  },
+
+  resetAllCases: async () => {
+    const res = await apiRequest('/admin/reset', { method: 'POST' });
+    if (res.success) {
+      set({ cases: [], activeCases: [], currentCase: null });
+      return true;
+    }
+    return false;
   },
 
   setupSocketListeners: () => {

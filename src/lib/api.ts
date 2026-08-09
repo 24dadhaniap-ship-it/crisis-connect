@@ -516,6 +516,26 @@ function handleClientFallback(endpoint: string, options: RequestInit = {}): any 
     };
   }
 
+  // 10. Admin Reset
+  if (endpoint === '/admin/reset' && method === 'POST') {
+    localStorage.removeItem('crisis_local_cases');
+    return {
+      success: true,
+      message: 'All system metrics and cases reset to 0',
+      data: {
+        totalCases: 0,
+        activeCases: 0,
+        respondersOnline: 0,
+        resolvedToday: 0,
+        avgResponseTimeMinutes: 0,
+        criticalCases: 0,
+        totalUsers: Object.keys(users).length,
+        casesByType: {},
+        casesBySeverity: {},
+      },
+    };
+  }
+
   // Default Success Response
   return { success: true, data: null, message: 'Success' };
 }

@@ -12,6 +12,7 @@ import {
   Play,
   Activity,
   Zap,
+  RotateCcw,
 } from 'lucide-react';
 import { useCaseStore } from '../store/useCaseStore';
 import { LiveCounter } from '../components/LiveCounter';
@@ -24,9 +25,10 @@ interface Props {
 }
 
 export const LandingPage: React.FC<Props> = ({ setActiveTab, onTrackCase }) => {
-  const { activeCases, fetchActiveCases } = useCaseStore();
+  const { activeCases, fetchActiveCases, resetAllCases } = useCaseStore();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [demoTriggering, setDemoTriggering] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     fetchActiveCases();
@@ -49,6 +51,14 @@ export const LandingPage: React.FC<Props> = ({ setActiveTab, onTrackCase }) => {
     if (res.success && res.data) {
       onTrackCase(res.data.caseId);
     }
+  };
+
+  const handleResetSystemData = async () => {
+    setIsResetting(true);
+    await resetAllCases();
+    await fetchActiveCases();
+    await fetchStats();
+    setIsResetting(false);
   };
 
   return (
@@ -94,8 +104,8 @@ export const LandingPage: React.FC<Props> = ({ setActiveTab, onTrackCase }) => {
             </button>
           </div>
 
-          {/* Interactive Demo Simulator Button */}
-          <div className="mt-6">
+          {/* Interactive Demo Simulator & Reset Buttons */}
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
               onClick={handleRunLiveDemo}
               disabled={demoTriggering}
@@ -103,6 +113,16 @@ export const LandingPage: React.FC<Props> = ({ setActiveTab, onTrackCase }) => {
             >
               <Play className="w-3.5 h-3.5 text-purple-400" />
               {demoTriggering ? 'Simulating Emergency Incident...' : 'Trigger Live Demo Scenario (30s Lifecycle)'}
+            </button>
+
+            <button
+              onClick={handleResetSystemData}
+              disabled={isResetting}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 text-xs font-bold transition-all shadow-md"
+              title="Reset active cases and metrics to 0"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-rose-400" />
+              {isResetting ? 'Resetting...' : 'Reset All Values to 0'}
             </button>
           </div>
         </div>

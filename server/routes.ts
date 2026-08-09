@@ -620,6 +620,29 @@ router.post('/admin/demo-trigger', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/admin/reset', (req: Request, res: Response) => {
+  try {
+    db.clearAllCases();
+    return res.json({
+      success: true,
+      message: 'All system metrics and cases reset to 0',
+      data: {
+        totalCases: 0,
+        activeCases: 0,
+        respondersOnline: 0,
+        resolvedToday: 0,
+        avgResponseTimeMinutes: 0,
+        criticalCases: 0,
+        totalUsers: 0,
+        casesByType: {},
+        casesBySeverity: {},
+      },
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, message: 'Reset failed' });
+  }
+});
+
 // ==========================================
 // 6. FACILITIES (/api/facilities)
 // ==========================================

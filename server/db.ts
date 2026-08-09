@@ -798,6 +798,11 @@ class Database {
     });
   }
 
+  public clearAllCases(): void {
+    this.cases.clear();
+    this.caseMessages.clear();
+  }
+
   public getNearbyFacilities(lat: number, lng: number, radiusMeters: number = 5000): NearbyFacility[] {
     return this.facilities
       .map((fac) => {

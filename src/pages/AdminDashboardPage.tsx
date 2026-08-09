@@ -12,6 +12,7 @@ import {
   PieChart as PieIcon,
   Building2,
   ShieldAlert,
+  RotateCcw,
 } from 'lucide-react';
 import {
   BarChart,
@@ -39,12 +40,13 @@ const COLORS = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'
 
 export const AdminDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
   const { demoLogin } = useAuthStore();
-  const { cases, fetchCases, updateCaseStatus } = useCaseStore();
+  const { cases, fetchCases, updateCaseStatus, resetAllCases } = useCaseStore();
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [responders, setResponders] = useState<User[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [demoRunning, setDemoRunning] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     fetchCases();
@@ -74,6 +76,14 @@ export const AdminDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
       fetchCases();
       onTrackCase(res.data.caseId);
     }
+  };
+
+  const handleResetSystemData = async () => {
+    setIsResetting(true);
+    await resetAllCases();
+    await fetchCases();
+    await fetchStats();
+    setIsResetting(false);
   };
 
   const handleAssignResponder = async (caseId: string, responderId: string) => {
@@ -129,7 +139,7 @@ export const AdminDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleRunDemo}
               disabled={demoRunning}
@@ -140,10 +150,12 @@ export const AdminDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
             </button>
 
             <button
-              onClick={() => demoLogin('admin')}
-              className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700"
+              onClick={handleResetSystemData}
+              disabled={isResetting}
+              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-900/50 flex items-center gap-2 transition-all"
             >
-              Login Command Admin
+              <RotateCcw className="w-4 h-4" />
+              {isResetting ? 'Resetting...' : 'Reset System Data to 0'}
             </button>
           </div>
         </div>
