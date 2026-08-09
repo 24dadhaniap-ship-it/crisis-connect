@@ -15,7 +15,7 @@ import { useAuthStore } from './store/useAuthStore';
 import { useCaseStore } from './store/useCaseStore';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<string>('landing');
+  const [activeTab, setActiveTab] = useState<string>('auth');
   const [selectedCaseId, setSelectedCaseId] = useState<string>('');
 
   const { fetchMe } = useAuthStore();
