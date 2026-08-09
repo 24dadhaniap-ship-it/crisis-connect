@@ -32,6 +32,8 @@ export const ResponderDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
   const [selectedCase, setSelectedCase] = useState<EmergencyCase | null>(null);
   const [statusNote, setStatusNote] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isOnDuty, setIsOnDuty] = useState(true);
+  const [simulatingCall, setSimulatingCall] = useState(false);
 
   useEffect(() => {
     fetchCases();
@@ -46,7 +48,9 @@ export const ResponderDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
   const handleAccept = async (caseId: string) => {
     const success = await acceptCase(caseId);
     if (success) {
-      fetchCases();
+      await fetchCases();
+      const updated = cases.find((c) => c.caseId === caseId);
+      if (updated) setSelectedCase(updated);
     }
   };
 
@@ -57,7 +61,21 @@ export const ResponderDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
     setIsUpdating(false);
     if (success) {
       setStatusNote('');
-      fetchCases();
+      await fetchCases();
+      setSelectedCase({
+        ...selectedCase,
+        status,
+      });
+    }
+  };
+
+  const handleSimulateCall = async () => {
+    setSimulatingCall(true);
+    const res = await apiRequest('/admin/demo-trigger', { method: 'POST' });
+    setSimulatingCall(false);
+    if (res.success && res.data) {
+      await fetchCases();
+      setSelectedCase(res.data);
     }
   };
 
@@ -83,13 +101,65 @@ export const ResponderDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Duty Status Toggle */}
+            <button
+              onClick={() => setIsOnDuty(!isOnDuty)}
+              className={`px-3.5 py-2 rounded-xl text-xs font-extrabold flex items-center gap-2 transition-all border ${
+                isOnDuty
+                  ? 'bg-emerald-950 text-emerald-400 border-emerald-800 hover:bg-emerald-900'
+                  : 'bg-rose-950 text-rose-400 border-rose-800 hover:bg-rose-900'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${isOnDuty ? 'bg-emerald-400 animate-ping' : 'bg-rose-500'}`} />
+              {isOnDuty ? 'ON DUTY & READY' : 'OFF DUTY'}
+            </button>
+
+            {/* Simulate Call Button */}
+            <button
+              onClick={handleSimulateCall}
+              disabled={simulatingCall}
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-900/50 flex items-center gap-2 transition-all"
+            >
+              <Play className="w-4 h-4" />
+              {simulatingCall ? 'Simulating Dispatch...' : '⚡ Test Emergency Call'}
+            </button>
+
             <button
               onClick={() => demoLogin('responder')}
-              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-lg shadow-blue-900/50 flex items-center gap-2 transition-all"
+              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700"
             >
-              <ShieldCheck className="w-4 h-4" /> Demo Paramedic Login
+              <ShieldCheck className="w-4 h-4" /> Switch Role
             </button>
+          </div>
+        </div>
+
+        {/* Status Metrics Strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase">My Active Dispatches</div>
+              <div className="text-2xl font-black text-emerald-400 mt-0.5">{myAssignedCases.length}</div>
+            </div>
+            <Truck className="w-6 h-6 text-emerald-500" />
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase">Unassigned Emergency Calls</div>
+              <div className="text-2xl font-black text-amber-400 mt-0.5">{activeUnassigned.length}</div>
+            </div>
+            <AlertTriangle className="w-6 h-6 text-amber-500" />
+          </div>
+
+          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+            <div>
+              <div className="text-[10px] font-bold text-slate-400 uppercase">Response Status</div>
+              <div className="text-sm font-extrabold text-blue-400 mt-1">
+                {selectedCase ? selectedCase.status.toUpperCase() : 'STANDBY IDLE'}
+              </div>
+            </div>
+            <Activity className="w-6 h-6 text-blue-400 animate-pulse" />
           </div>
         </div>
 
@@ -104,8 +174,16 @@ export const ResponderDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
               </h3>
 
               {myAssignedCases.length === 0 ? (
-                <div className="p-6 text-center text-xs text-slate-500 bg-slate-950 rounded-xl border border-slate-800/80">
-                  You currently have no active assigned incidents. Accept a call below to begin response.
+                <div className="p-6 text-center text-xs text-slate-500 bg-slate-950 rounded-xl border border-slate-800/80 space-y-2">
+                  <p>You currently have no active assigned incidents.</p>
+                  {activeUnassigned.length > 0 && (
+                    <button
+                      onClick={() => handleAccept(activeUnassigned[0].caseId)}
+                      className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md"
+                    >
+                      ⚡ Accept First Call (#{activeUnassigned[0].caseId})
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -147,8 +225,14 @@ export const ResponderDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
 
               <div className="space-y-3 max-h-[400px] overflow-y-auto">
                 {activeUnassigned.length === 0 ? (
-                  <div className="p-6 text-center text-xs text-slate-500">
-                    No unassigned emergency calls on the network right now.
+                  <div className="p-6 text-center text-xs text-slate-500 space-y-3">
+                    <p>No unassigned emergency calls on the network right now.</p>
+                    <button
+                      onClick={handleSimulateCall}
+                      className="px-3 py-1.5 rounded-lg bg-purple-950 text-purple-300 border border-purple-800 text-xs font-bold hover:bg-purple-900 transition-colors"
+                    >
+                      ⚡ Trigger Test Emergency Call
+                    </button>
                   </div>
                 ) : (
                   activeUnassigned.map((c) => (
@@ -260,6 +344,39 @@ export const ResponderDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
                     placeholder="Add dispatch log note (e.g. Paramedic on scene, patient stabilized)..."
                     className="flex-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
                   />
+                  <button
+                    onClick={() => handleUpdateStatus(selectedCase.status)}
+                    disabled={!statusNote.trim() || isUpdating}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-bold transition-colors"
+                  >
+                    Log Note
+                  </button>
+                </div>
+
+                {/* Direct Action Contacts */}
+                <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+                  <div className="flex items-center gap-2 text-slate-300">
+                    <MapPin className="w-4 h-4 text-red-500" />
+                    <span><strong>Location:</strong> {selectedCase.location.address || 'Mumbai, Maharashtra'}</span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    {selectedCase.reporterPhone && (
+                      <a
+                        href={`tel:${selectedCase.reporterPhone}`}
+                        className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold flex items-center gap-1.5 transition-colors"
+                      >
+                        <Phone className="w-3.5 h-3.5" /> Call Reporter ({selectedCase.reporterPhone})
+                      </a>
+                    )}
+
+                    <button
+                      onClick={() => onTrackCase(selectedCase.caseId)}
+                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold"
+                    >
+                      Open Live Tracker ↗
+                    </button>
+                  </div>
                 </div>
 
                 {/* Gemini AI Tactical Triage */}
@@ -279,12 +396,27 @@ export const ResponderDashboardPage: React.FC<Props> = ({ onTrackCase }) => {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl bg-slate-900 border border-slate-800 p-12 text-center text-slate-500">
-                <Truck className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                <h3 className="text-base font-bold text-white mb-1">No Case Selected</h3>
-                <p className="text-xs max-w-sm mx-auto">
-                  Select an active incident call from the left menu to view AI tactical instructions, change status, and navigate.
-                </p>
+              <div className="rounded-2xl bg-slate-900 border border-slate-800 p-12 text-center text-slate-400 space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-slate-950 text-blue-400 flex items-center justify-center mx-auto border border-slate-800 shadow-inner">
+                  <Truck className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white mb-1">Responder Terminal Standby</h3>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Select an active incident call from the left list to view AI tactical instructions, update status, and track turn-by-turn navigation.
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+                  <button
+                    onClick={handleSimulateCall}
+                    disabled={simulatingCall}
+                    className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-lg shadow-purple-900/50 flex items-center gap-2 transition-all"
+                  >
+                    <Play className="w-4 h-4" />
+                    {simulatingCall ? 'Simulating Dispatch...' : '⚡ Test Emergency Call'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
