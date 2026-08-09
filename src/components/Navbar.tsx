@@ -23,10 +23,9 @@ interface Props {
 }
 
 export const Navbar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
-  const { user, isAuthenticated, logout, demoLogin } = useAuthStore();
+  const { user, isAuthenticated, logout } = useAuthStore();
   const { activeCases } = useCaseStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [demoMenuOpen, setDemoMenuOpen] = useState(false);
 
   const handleNav = (tab: string) => {
     setActiveTab(tab);
@@ -49,58 +48,6 @@ export const Navbar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
             <strong className="text-white">{activeCases.length}</strong> Active Emergencies (
             <strong className="text-red-400">{criticalCount} Critical</strong>)
           </span>
-        </div>
-
-        {/* Quick Demo Selector */}
-        <div className="relative shrink-0">
-          <button
-            onClick={() => setDemoMenuOpen(!demoMenuOpen)}
-            className="flex items-center gap-1 px-2.5 py-0.5 rounded bg-slate-800 text-slate-200 hover:text-white border border-slate-700 text-[11px] font-semibold"
-          >
-            ⚡ Quick Demo Login <ChevronDown className="w-3 h-3" />
-          </button>
-
-          {demoMenuOpen && (
-            <div className="absolute right-0 mt-1 w-48 rounded-lg bg-slate-900 border border-slate-800 shadow-xl py-1 z-50">
-              <div className="px-3 py-1 text-[10px] font-bold text-slate-500 uppercase">Switch Demo Account</div>
-              <button
-                onClick={() => {
-                  demoLogin('admin');
-                  setDemoMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
-              >
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-400" /> Command Admin
-              </button>
-              <button
-                onClick={() => {
-                  demoLogin('responder');
-                  setDemoMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
-              >
-                <ShieldAlert className="w-3.5 h-3.5 text-blue-400" /> Paramedic Responder
-              </button>
-              <button
-                onClick={() => {
-                  demoLogin('hospital');
-                  setDemoMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
-              >
-                <Activity className="w-3.5 h-3.5 text-emerald-400" /> Trauma Hospital
-              </button>
-              <button
-                onClick={() => {
-                  demoLogin('citizen');
-                  setDemoMenuOpen(false);
-                }}
-                className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
-              >
-                <User className="w-3.5 h-3.5 text-amber-400" /> Citizen (John Doe)
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
