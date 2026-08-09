@@ -130,7 +130,7 @@ export const Navbar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
         <div className="hidden md:flex items-center gap-3">
           <NotificationBell />
 
-          {isAuthenticated && user && (
+          {isAuthenticated && user ? (
             <div className="flex items-center gap-3 border-l border-slate-800 pl-3">
               <button
                 onClick={() => handleNav('profile')}
@@ -155,6 +155,13 @@ export const Navbar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
                 <LogOut className="w-4 h-4" />
               </button>
             </div>
+          ) : (
+            <button
+              onClick={() => handleNav('auth')}
+              className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-white transition-colors"
+            >
+              Sign In / Create Account
+            </button>
           )}
         </div>
 
@@ -211,7 +218,7 @@ export const Navbar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
             <ShieldCheck className="w-4 h-4 text-purple-400" /> Command Admin
           </button>
 
-          {isAuthenticated && (
+          {isAuthenticated && user ? (
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between">
               <button
                 onClick={() => handleNav('profile')}
@@ -223,6 +230,13 @@ export const Navbar: React.FC<Props> = ({ activeTab, setActiveTab }) => {
                 Sign Out
               </button>
             </div>
+          ) : (
+            <button
+              onClick={() => handleNav('auth')}
+              className="w-full mt-2 py-2.5 rounded-lg bg-slate-800 text-white text-xs font-bold border border-slate-700"
+            >
+              Sign In / Create Account
+            </button>
           )}
         </div>
       )}

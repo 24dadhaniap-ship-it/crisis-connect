@@ -77,8 +77,25 @@ export const AuthPage: React.FC<Props> = ({ onSuccess }) => {
           </div>
 
           {error && (
-            <div className="p-3 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold">
-              {error}
+            <div className="p-3 rounded-lg bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold flex items-center justify-between gap-2">
+              <span>{error}</span>
+              {mode === 'login' ? (
+                <button
+                  type="button"
+                  onClick={() => setMode('register')}
+                  className="underline text-red-400 font-bold shrink-0 hover:text-red-300"
+                >
+                  Create Account →
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMode('login')}
+                  className="underline text-red-400 font-bold shrink-0 hover:text-red-300"
+                >
+                  Sign In →
+                </button>
+              )}
             </div>
           )}
 
